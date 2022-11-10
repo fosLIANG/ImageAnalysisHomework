@@ -3,28 +3,20 @@ import numpy as np
 
 
 def cv_show(name, img):
-    '''
-     显示图像
-    '''
     cv2.imshow(name, img)
     cv2.waitKey()
     cv2.destroyAllWindows()
 
 
 def show_two_pictures(img_one, img_two):
-    '''
-     对比显示两张图片
-    '''
     cv_show("Two Pictures", np.hstack((img_one, img_two)))
 
 
 def zmMinFilterGray(src, r=7):
-    '''''最小值滤波，r是滤波器半径'''
     return cv2.erode(src, np.ones((2 * r - 1, 2 * r - 1)))
 
 
 def guidedfilter(I, p, r, eps):
-    '''''引导滤波，直接参考网上的matlab代码'''
     height, width = I.shape
     m_I = cv2.boxFilter(I, -1, (r, r))
     m_p = cv2.boxFilter(p, -1, (r, r))
@@ -42,20 +34,17 @@ def guidedfilter(I, p, r, eps):
     return m_a * I + m_b
 
 
-def getV1(m, r, eps, w, maxV1):  # 输入rgb图像，值范围[0,1]
-    '''''计算大气遮罩图像V1和光照值A, V1 = 1-t/A'''
-    V1 = np.min(m, 2)  # 得到暗通道图像
-    V1 = guidedfilter(V1, zmMinFilterGray(V1, 7), r, eps)  # 使用引导滤波优化
+def getV1(m, r, eps, w, maxV1):  
+    V1 = np.min(m, 2) 
+    V1 = guidedfilter(V1, zmMinFilterGray(V1, 7), r, eps)  
     bins = 2000
-    ht = np.histogram(V1, bins)  # 计算大气光照A
+    ht = np.histogram(V1, bins)  
     d = np.cumsum(ht[0]) / float(V1.size)
     for lmax in range(bins - 1, 0, -1):
         if d[lmax] <= 0.999:
             break
     A = np.mean(m, 2)[V1 >= ht[1][lmax]].max()
-
-    V1 = np.minimum(V1 * w, maxV1)  # 对值范围进行限制
-
+    V1 = np.minimum(V1 * w, maxV1) 
     return V1, A
 
 
